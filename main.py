@@ -17,7 +17,8 @@ Original file is located at
 
 ## 0. Puesta en marcha
 """
-
+import csv
+import os
 import time
 import findspark
 import matplotlib.pyplot as plt
@@ -30,8 +31,35 @@ from pyspark.sql import functions as f
 from pyspark.sql.functions import *
 from pyspark.sql.functions import hour
 
-tiempo_inicio = time.time()
+if not os.path.exists('tiempos.csv'):
+    with open('tiempos.csv', 'w', newline='') as csvfile:
+        spamwriter = csv.writer(csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        spamwriter.writerow(['PC',
+                             'Cores',
+                             'Tiempo Total',
+                             'Tiempo Carga Taxis',
+                             'Tiempo Carga Zonas',
+                             'Tiempo Limpieza',
+                             'Tiempo Consulta 1',
+                             'Tiempo Consulta 2',
+                             'Tiempo Consulta 3',
+                             'Tiempo Consulta 4',
+                             'Tiempo Consulta 5',
+                             'Tiempo Consulta 6',
+                             'Tiempo Consulta 7',
+                             'Tiempo Consulta 8',
+                             'Tiempo Consulta 9',
+                             'Tiempo Consulta 10',
+                             'Tiempo Consulta 11',
+                             'Tiempo Consulta 12',
+                             'Tiempo Consulta 13',
+                             'Tiempo Consulta 14',
+                             'Tiempo Consulta 15'
+                             ])
+else:
+    print("El archivo csv ya existe")
 
+tiempo_inicio = time.time()
 findspark.init()
 
 conf = SparkConf().setMaster('local').setAppName("HPC2")
@@ -50,11 +78,12 @@ Se capta el archivo CSV que recoge toda la información de las carreras de taxi 
 
 ### 2.0. Carga CSV
 """
-
+ti_carga_taxis = time.time()
 filepath = "tripdata_2017-01.csv"
-csv = pd.read_csv(filepath)
+
 
 df = spark.read.option('header', True).csv(filepath).cache()
+tf_carga_taxis = time.time()
 
 df.createOrReplaceTempView('taxis')
 
@@ -63,22 +92,26 @@ df.createOrReplaceTempView('taxis')
 """Se capta el archivo CSV que indicará la zona correspondiente a cada ID de localización. Se crearán dos dataframes 
 para poder insertar 2 veces las 2 columnas que interesan (Barrio y Zona para el punto de partida y de destino). """
 
+ti_carga_zones = time.time()
+
 filepath_zones = "taxi+_zone_lookup.csv"
 
 df_zonas1 = spark.read.option('header', True).csv(filepath_zones).cache()
+
 df_zonas2 = spark.read.option('header', True).csv(filepath_zones).cache()
+tf_carga_zonas = time.time()
 
 """###2.1. Limpieza"""
-
+ti_limpieza = time.time()
 # Syso para verificar que no existe ningun dato nulo, si hubiera solo hacer un filter con is not null --->
 # df=df.filter(str(i)+" is not null")
 for i in df.columns:
     if df.filter(str(i) + " is null").count() == 0:
         pass
-        #print("El atributo " + str(i) + " no contiene ningun valor a null")
+        # print("El atributo " + str(i) + " no contiene ningun valor a null")
     else:
         pass
-        #print("El atributo " + str(i) + " contiene un valor a null")
+        # print("El atributo " + str(i) + " contiene un valor a null")
     # df=df.filter(str(i)+" is not null")
 
 # Verificar que solo hay vendorID 1 y 2, eliminamos si hay otros
@@ -96,7 +129,7 @@ timeDiff = (f.unix_timestamp('tpep_dropoff_datetime', format=timeFmt) - f.unix_t
 df = df.withColumn("Duration", timeDiff)
 df = df.filter(df.Duration > 0)
 df = df.drop('Duration')  # Borramos la columna de Duration creada
-#df.show()
+# df.show()
 
 # Eliminos las distancias recorridas por el taximetro que sea <=0.0
 Total = df.count()
@@ -158,6 +191,7 @@ df = df.filter(df.total_amount > 0.0)
 limpieza = df.count()
 # print("Numero de filas eliminadas " + str(Total - limpieza))
 
+tf_limpieza = time.time()
 """### 2.2. Número de viajes de cada empresa
 
 Consulta1
@@ -256,8 +290,8 @@ print("Tiempo consulta 4: ", tf_consulta4 - ti_consulta4)
 x = [i[0] for i in res3]
 y = [i[1] for i in res3]
 
-#print(x)
-#print(y)
+# print(x)
+# print(y)
 
 numero_de_grupos = len(x)
 indice_barras = np.arange(numero_de_grupos)
@@ -644,7 +678,7 @@ res13 = [(reduce13[0][0], reduce13[0][1] / df.filter('VendorID=' + str(reduce13[
 '''print("Minutos en total clasificado por VendorID " + str(reduce13))
 print("Media de tiempo en minutos clasificado por VendorID" + str(res13))'''
 tf_consulta15 = time.time()
-print("Tiempo consulta 15: ", tf_consulta15-ti_consulta15)
+print("Tiempo consulta 15: ", tf_consulta15 - ti_consulta15)
 
 x = ['Creative Mobile Technologies', 'VeriFone Inc.']
 y = [res13[1][1], res13[0][1]]
@@ -661,10 +695,36 @@ plt.xlabel("Empresas", fontdict={'fontsize': 10, 'fontweight': 'bold', 'color': 
 plt.ylabel("Tiempo en minutos", fontdict={'fontsize': 10, 'fontweight': 'bold', 'color': 'tab:blue'})
 plt.title('Tiempo medio de los trayectos efectuados por cada empresa',
           fontdict={'fontsize': 15, 'fontweight': 'bold', 'color': 'tab:blue'})
-#plt.show()
+# plt.show()
 
 tiempo_fin = time.time()
 
 print("Tiempo Total: ", (tiempo_fin - tiempo_inicio))
+
+valores = ['PC 1 - Enrique',
+           '4 cores a 2.4GHz',
+           tiempo_fin - tiempo_inicio,
+           tf_carga_taxis - ti_carga_taxis,
+           tf_carga_zonas - ti_carga_zones,
+           tf_limpieza - ti_limpieza,
+           tf_consulta1 - ti_consulta1,
+           tf_consulta2 - ti_consulta2,
+           tf_consulta3 - ti_consulta3,
+           tf_consulta4 - ti_consulta4,
+           tf_consulta5 - ti_consulta5,
+           tf_consulta6 - ti_consulta6,
+           tf_consulta7 - ti_consulta7,
+           tf_consulta8 - ti_consulta8,
+           tf_consulta9 - ti_consulta9,
+           tf_consulta10 - ti_consulta10,
+           tf_consulta11 - ti_consulta11,
+           tf_consulta12 - ti_consulta12,
+           tf_consulta13 - ti_consulta13,
+           tf_consulta14 - ti_consulta14,
+           tf_consulta15 - ti_consulta15]
+
+with open('tiempos.csv', 'a', newline='') as csvfile:
+    spamwriter = csv.writer(csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+    spamwriter.writerow(valores)
 
 """## 3. Conclusiones"""
