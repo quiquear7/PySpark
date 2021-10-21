@@ -18,17 +18,15 @@ Original file is located at
 ## 0. Puesta en marcha
 """
 
-import os
+import time
 import findspark
-import matplotlib as mpl
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-
 from datetime import datetime
-
 from pyspark.sql import SparkSession
 from pyspark import SparkContext, SparkConf
+from pyspark.sql import functions as f
 
 findspark.init()
 
@@ -58,7 +56,8 @@ df.createOrReplaceTempView('taxis')
 
 df.show()
 
-"""Se capta el archivo CSV que indicará la zona correspondiente a cada ID de localización. Se crearán dos dataframes para poder insertar 2 veces las 2 columnas que interesan (Barrio y Zona para el punto de partida y de destino)."""
+"""Se capta el archivo CSV que indicará la zona correspondiente a cada ID de localización. Se crearán dos dataframes 
+para poder insertar 2 veces las 2 columnas que interesan (Barrio y Zona para el punto de partida y de destino). """
 
 filepath_zones = "taxi+_zone_lookup.csv"
 
@@ -67,7 +66,8 @@ df_zonas2 = spark.read.option('header', True).csv(filepath_zones).cache()
 
 """###2.1. Limpieza"""
 
-# Syso para verificar que no existe ningun dato nulo, si hubiera solo hacer un filter con is not null ---> df=df.filter(str(i)+" is not null")
+# Syso para verificar que no existe ningun dato nulo, si hubiera solo hacer un filter con is not null --->
+# df=df.filter(str(i)+" is not null")
 for i in df.columns:
     if df.filter(str(i) + " is null").count() == 0:
         print("El atributo " + str(i) + " no contiene ningun valor a null")
@@ -81,11 +81,11 @@ df = df.filter("VendorID = 1 or VendorID=2")
 limpieza = df.count()
 print("Numero de filas eliminadas " + str(Total - limpieza))
 
-# Eliminamos las filas que el resultado de restar tpep_dropoff_datetime - tpep_pickup_datetime<=0 y borramos la columana de duration
-from pyspark.sql import functions as F
+# Eliminamos las filas que el resultado de restar tpep_dropoff_datetime - tpep_pickup_datetime<=0 y borramos la
+# columana de duration
 
 timeFmt = "yyyy-MM-dd HH:mm:ss"
-timeDiff = (F.unix_timestamp('tpep_dropoff_datetime', format=timeFmt) - F.unix_timestamp('tpep_pickup_datetime',
+timeDiff = (f.unix_timestamp('tpep_dropoff_datetime', format=timeFmt) - f.unix_timestamp('tpep_pickup_datetime',
                                                                                          format=timeFmt))
 df = df.withColumn("Duration", timeDiff)
 df = df.filter(df.Duration > 0)
@@ -164,7 +164,9 @@ reduce1 = map1.reduceByKey(lambda x, y: x + y)
 res1 = reduce1.collect()
 print(res1)
 
-"""También se podría realizar una consulta SQL directa seleccionando a través del 'group by' las empresas y con el contador (count(*)) se obtiene la cantidad de registros. También servirá para contrastar los resultados obtenidos anteriormente."""
+"""También se podría realizar una consulta SQL directa seleccionando a través del 'group by' las empresas y con el 
+contador (count(*)) se obtiene la cantidad de registros. También servirá para contrastar los resultados obtenidos 
+anteriormente. """
 
 empresas_sql = spark.sql(
     'SELECT VendorID as empresa , count(*) as cantidad_viajes FROM taxis  WHERE VendorID is not null  group by VendorID')
@@ -332,11 +334,12 @@ plt.show()
 
 """2da forma Velocidad media en funcion de las horas : utilizando sentencia sql """
 
-##importando librerias para sql y las horas
+# importando librerias para sql y las horas
 from pyspark.sql.functions import *
 from pyspark.sql.functions import hour
 
-##Se convierte los datos de las fecha (formato String) a formato timeStamp , luego se añade  una columna velocidad media (Los timestamp convertidos se castean a segundos y se realiza el calculo distancia/tiempo )
+# Se convierte los datos de las fecha (formato String) a formato timeStamp , luego se añade  una columna velocidad
+# media (Los timestamp convertidos se castean a segundos y se realiza el calculo distancia/tiempo )
 df2 = df.withColumn('tpep_pickup_datetime_timestamp', to_timestamp(col('tpep_pickup_datetime'))) \
     .withColumn('tpep_dropoff_datetime_timestamp', to_timestamp(col('tpep_dropoff_datetime'))) \
     .withColumn('Velocidad_media', col('trip_distance') / (
@@ -349,7 +352,7 @@ df2.select("tpep_pickup_datetime_timestamp", "tpep_dropoff_datetime_timestamp", 
 
 """Agrupamos y calculamos el promedio con la funcion avg"""
 
-##avg : funcion para calcular la media
+# avg : funcion para calcular la media
 df2.groupBy('hour').avg('Velocidad_media').show()
 
 """### 2.6. Viajes en taxi más comunes
@@ -365,7 +368,8 @@ df_completo = df_completo_prev.join(df_zonas2, df_completo_prev['DOLocationID'] 
 df_completo = df_completo.drop('LocationID')
 df_completo.show()
 
-"""Ahora se guardarán en el dataframe las columnas de barrio y zona de partida y de destino para cada una de las carreras de taxis utilizando una sentencia SQL."""
+"""Ahora se guardarán en el dataframe las columnas de barrio y zona de partida y de destino para cada una de las 
+carreras de taxis utilizando una sentencia SQL. """
 
 df_completo.createOrReplaceTempView('zonas')
 zonas = spark.sql("SELECT PU_Borough, PU_Zone, DO_Borough, DO_Zone FROM zonas")
@@ -478,7 +482,8 @@ plt.figure(figsize=(9, 7))
 plt.bar(indice_barras, y1, width=ancho_barras, label='Salida')
 plt.bar(indice_barras + ancho_barras, y2, width=ancho_barras, label='Llegada')
 plt.legend(loc='best')
-## Se colocan los indicadores en el eje x
+
+# Se colocan los indicadores en el eje x
 plt.xticks(indice_barras + ancho_barras,
            ('Bronx', 'Brooklyn', 'EWR', 'Manhattan', 'Queens', 'Staten Island', 'Unknown'))
 
