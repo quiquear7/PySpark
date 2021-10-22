@@ -35,6 +35,8 @@ if not os.path.exists('tiempos.csv'):
     with open('tiempos.csv', 'w', newline='') as csvfile:
         spamwriter = csv.writer(csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         spamwriter.writerow(['PC',
+                             'Iteracion',
+                             'Procesador',
                              'Cores',
                              'Tiempo Total',
                              'Tiempo Carga Taxis',
@@ -57,7 +59,7 @@ if not os.path.exists('tiempos.csv'):
                              'Tiempo Consulta 15'
                              ])
 else:
-    print("El archivo csv ya existe")
+    print("El archivo csv ya existe, no es necesario crearlo")
 
 tiempo_inicio = time.time()
 findspark.init()
@@ -79,10 +81,10 @@ Se capta el archivo CSV que recoge toda la información de las carreras de taxi 
 ### 2.0. Carga CSV
 """
 ti_carga_taxis = time.time()
+
 filepath = "tripdata_2017-01.csv"
-
-
 df = spark.read.option('header', True).csv(filepath).cache()
+
 tf_carga_taxis = time.time()
 
 df.createOrReplaceTempView('taxis')
@@ -97,8 +99,8 @@ ti_carga_zones = time.time()
 filepath_zones = "taxi+_zone_lookup.csv"
 
 df_zonas1 = spark.read.option('header', True).csv(filepath_zones).cache()
-
 df_zonas2 = spark.read.option('header', True).csv(filepath_zones).cache()
+
 tf_carga_zonas = time.time()
 
 """###2.1. Limpieza"""
@@ -702,6 +704,8 @@ tiempo_fin = time.time()
 print("Tiempo Total: ", (tiempo_fin - tiempo_inicio))
 
 valores = ['PC 1 - Enrique',
+           2,
+           'i5-1135G7',
            '4 cores a 2.4GHz',
            tiempo_fin - tiempo_inicio,
            tf_carga_taxis - ti_carga_taxis,
