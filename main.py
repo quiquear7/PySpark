@@ -704,7 +704,7 @@ tiempo_fin = time.time()
 print("Tiempo Total: ", (tiempo_fin - tiempo_inicio))
 
 valores = ['PC 1 - Enrique',
-           2,
+           5,
            'i5-1135G7',
            '4 cores a 2.4GHz',
            tiempo_fin - tiempo_inicio,
