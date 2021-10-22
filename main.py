@@ -703,10 +703,10 @@ tiempo_fin = time.time()
 
 print("Tiempo Total: ", (tiempo_fin - tiempo_inicio))
 
-valores = ['PC 1 - Enrique',
+valores = ['PC 2 - Diego',
            5,
-           'i5-1135G7',
-           '4 cores a 2.4GHz',
+           'i7-8550U',
+           '4 cores a 1.8GHz',
            tiempo_fin - tiempo_inicio,
            tf_carga_taxis - ti_carga_taxis,
            tf_carga_zonas - ti_carga_zones,
